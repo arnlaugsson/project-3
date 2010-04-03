@@ -1,0 +1,4 @@
+if (y<0) then
+	i := i+1
+else
+	i := i * 2

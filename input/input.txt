@@ -1,0 +1,15 @@
+Program Test(input, output);
+{This is a test program}
+Var i, j : integer;
+Var result : real;
+begin
+	i := 0;
+	j := 1;
+	if (i < j) then
+	    result = 12.34
+	else
+		result = 12.34E7;
+		i := i + j;
+	{!}
+end
+.
