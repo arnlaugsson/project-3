@@ -1,4 +1,4 @@
-# Compilers - Project 1
+# Compilers - Project 3
 # Reykjavik University, Spring 2010
 # Haukur Jonasson, Skuli Arnlaugsson
 
@@ -7,20 +7,24 @@
 SYMMAX = 500
 
 class SymbolTableEntry:
-    def __init__(self, lexeme):
+    def __init__(self, lexeme, tokenCode):
         self.m_lexeme = lexeme
+        self.m_TokenCode = tokenCode
 
     def getLexeme(self):
         return self.m_lexeme
+
+    def getTC(self):
+        return self.m_TokenCode[3:]
 
 class SymbolTable:
     def __init__(self):
         self.SymbolTable = []
         self.lastEntry = 1
 
-    def insert(self, lexeme):
+    def insert(self, lexeme,tokenCode):
         if len(self.SymbolTable) < SYMMAX:
-            entry = SymbolTableEntry(lexeme)
+            entry = SymbolTableEntry(lexeme,tokenCode)
             self.SymbolTable.append(entry)
             self.lastEntry += 1
             return self.lastEntry -1
@@ -35,15 +39,17 @@ class SymbolTable:
         return -1
 
     def __repr__(self):
-        format_width = 10
+        format_num = 5
+        format_lex = 10
 
-        print '\n\nAnd for the symboltable :\n'
-        print ' Entry'.rjust(format_width) + '\t\t' + ' Lexeme'.rjust(format_width)
-        width = 10
-
+        print '  -------------------------------'
+        print '            SYMBOLTABLE'
+        print '  Entry'.rjust(format_num) + '\t'+ 'TC' + '\t' + ' Lexeme'.rjust(format_lex)
+        print '  -------------------------------'
         for i,entry in enumerate(self.SymbolTable):
-            print '%s\t\t%s'%(str(i).rjust(format_width),entry.getLexeme().rjust(format_width))
+            print '%s\t%s\t%s'%(str(i).rjust(format_num),entry.getTC(),entry.getLexeme().rjust(format_lex))
 
+        print '  -------------------------------'
 
 
 

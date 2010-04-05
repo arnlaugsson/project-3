@@ -8,6 +8,9 @@ import ply.lex as lex
 import flex
 from token import Token
 
+maxLenghtOfIdentifier = 32
+
+
 class Scanner:
     """ The scanner class has a lexer and can deliver tokens on request."""
     def __init__(self,input,mod=flex):
@@ -30,14 +33,19 @@ class Scanner:
         return (token.lexpos - i) + 1
 
     def nextToken(self):
-        """ Returns the next token in the input file from the lexer."""
+        global maxLenghtOfIdentifier
+
         lexeme = self.lexer.token()
         if not lexeme:
             # If no token was returned, EOF reached, break loop.
             token = Token('tc_EOF',('','op_NONE'),'dt_NONE',self.lexer.lineno,0)
             return token
 
-        TokenCode = lexeme.type
+        if lexeme.type == 'tc_ID' and len(lexeme.value) > maxLenghtOfIdentifier:
+            TokenCode = 'tc_ID2LONG'
+        else:
+            TokenCode = lexeme.type
+
         try:
             opType = lexeme.OpType
         except:

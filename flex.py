@@ -15,7 +15,6 @@ from token import op_Type
 
 previousLexPosLineCount = 0
 
-
 # *** Simple Regular expressions *************************************
 # Simple regular expressions for tokens that have no dataType and no
 # opType. These can be defined directly by saying t_NAME = r'...' <=
@@ -44,8 +43,6 @@ optional_fraction   = r'\.'+int_num
 optional_exponent   = r'e|E' + int_num
 real_num            = int_num + r'(' + optional_fraction + r')?([Ee][+-]?'+int_num+')?'
 identifier          = letter + r'(' + letter + r'|' + digit + r')*'
-
-
 
 relop               = r'(\=)|(<\=)|(<)|(<>)|(>=)|(>)'
 addop               = r'(\+)|(-)|(or)'
@@ -97,6 +94,7 @@ def t_tc_INT_NUM(t):
 
 @lex.TOKEN(identifier)
 def t_tc_ID(t):
+    global maxLenghtOfIdentifier
     # Check if lexeme is a reserved keyword:
     if t.value.lower() in reserved:
         # lexeme found in reserved, update type.

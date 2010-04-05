@@ -4,6 +4,43 @@
 
 # This is the lexical analyser file as requested in part 3 of the assignment.
 # -*- coding: utf-8 -*-
+
+tc2Name = {
+    'tc_PROGRAM'    :   '"program"',
+    'tc_VAR'        :   '"var"',
+    'tc_ARRAY'      :   '"array"',
+    'tc_OF'         :   '"of"',
+    'tc_INTEGER'    :   'a type',
+    'tc_REAL'       :   'a type',
+    'tc_FUNCTION'   :   '"function"',
+    'tc_PROCEDURE'  :   '"procedure"',
+    'tc_BEGIN'      :   '"begin"',
+    'tc_END'        :   '"end"',
+    'tc_IF'         :   '"if"',
+    'tc_STATEMENT'  :   'a statement',
+    'tc_THEN'       :   '"then"',
+    'tc_ELSE'       :   '"else"',
+    'tc_WHILE'      :   '"while"',
+    'tc_DO'         :   '"do"',
+    'tc_NOT'        :   '"not"',
+    'tc_NONE'       :   '"none"',
+    'tc_ID'         :   'an identifier',
+    'tc_NUMBER'     :   'a number',
+    'tc_ASSIGNOP'   :   '":="',
+    'tc_RELOP'      :   'one of <, >, <=, >=, <>, or =',
+    'tc_ADDOP'      :   'one of +, -, or "or" ',
+    'tc_MULOP'      :   'one of *, /, "div", "mod" or "and"',
+    'tc_SEMICOL'    :   '";"',
+    'tc_COLON'      :   '":"',
+    'tc_COMMA'      :   '","',
+    'tc_DOT'        :   '"."',
+    'tc_DOTDOT'     :   '".."',
+    'tc_LPAREN'     :   '"("',
+    'tc_LBRACKET'   :   '"["',
+    'tc_RPAREN'     :   '")"',
+    'tc_RBRACKET'   :   '"]"',
+}
+
 reserved = {
     'program'   : 'tc_PROGRAM',
     'var'       : 'tc_VAR',
@@ -96,6 +133,6 @@ class Token:
             print self.TokenCode[3:] + '(' + self.DataValue[1][3:] + ')',
         else:
             print self.TokenCode[3:],
-        
+
 
 
