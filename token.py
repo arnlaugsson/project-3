@@ -119,10 +119,14 @@ class Token:
         self.DataValue          = dataValue
         self.DataType           = dataType
         self.lineno             = lineno
-        self.columnno            = columnno
+        self.columnno           = columnno
+        self.SymbolTableEntry   = -1
 
     def setSymTabEntry(self, entryNum):
         self.SymbolTableEntry   = entryNum
+
+    def getSymTabEntry(self):
+        return self.SymbolTableEntry
 
     def __repr__(self):
         if self.TokenCode == 'tc_ID':

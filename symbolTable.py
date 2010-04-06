@@ -17,12 +17,18 @@ class SymbolTableEntry:
     def getTC(self):
         return self.m_TokenCode[3:]
 
+class EntryList:
+    """
+    Not needed in our impl. - we use a list, not a linked list.
+    """
+    pass
+
 class SymbolTable:
     def __init__(self):
         self.SymbolTable = []
-        self.lastEntry = 1
+        self.lastEntry = 0
 
-    def insert(self, lexeme,tokenCode):
+    def insert(self,lexeme,tokenCode):
         if len(self.SymbolTable) < SYMMAX:
             entry = SymbolTableEntry(lexeme,tokenCode)
             self.SymbolTable.append(entry)

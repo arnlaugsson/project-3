@@ -9,6 +9,7 @@ from ply.lex import lex
 from parser import Parser
 
 def main(*args):
+    # TODO: Add options for the TAC code (print to screen or file)
     # Generate our parser, with the given input
 
     if len(sys.argv) > 1:
@@ -53,7 +54,8 @@ def main(*args):
 
     if len(parser.errors) == 0:
         print '  No errors were detected.'
-        parser.symbolTable.__repr__()
+        parser.SymbolTable.__repr__()
+        parser.printCode()
     else:
         print '  -------------------------------'
         print '  %d errors were encountered.'%len(parser.errors)

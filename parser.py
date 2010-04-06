@@ -9,6 +9,7 @@ from token import *
 from symbolTable import *
 import token
 from synchronizingSets import syncsets
+import code
 
 import symbolTable
 depth = 0
@@ -17,10 +18,10 @@ def trackDepth(func):
         global depth
         if classInstance.printTree: print depth,'\t','    '*depth,'Opening:', func.__name__
         depth += 1
-        func(classInstance)
+        value = func(classInstance)
         depth -= 1
         if classInstance.printTree: print depth,'\t','    '*depth,'Closing:',  func.__name__
-
+        return value
     return wrapper
 
 class Error:
@@ -38,9 +39,15 @@ class Error:
         return "\t"+" "*(self.columnno-2) + "^ " + self.message
 
 class Parser:
+    # TODO: Fix insertion to symbol-Table
+    #   so that a sub-function can have the same name or a variable declared inside of a function can have the same name as a different variable.
+    # TODO: Add code generation to the following parsing functions:
+    #   Expression, SimpleExpression, Term, Termrest, Factor, FactorRest
+    # TODO: create functions: opToCode, getSymbolTable, getCode
     global depth
     def __init__(self,input):
         self.__scanner = Scanner(input)
+        self.__code = code.Code()
         self.__currentToken = None
         self.__foundError = False
         self.__errorInFunction = ''
@@ -48,24 +55,48 @@ class Parser:
         self.printTree = False
         self.errors = []
         self.skipped = []
-        self.symbolTable = symbolTable.SymbolTable()
 
+        self.SymbolTable = symbolTable.SymbolTable()
+        self.__initializeSymbolTable()
+
+    def __initializeSymbolTable(self):
+        self.SymbolTable.insert('0','tc_CONST')
+        self.SymbolTable.insert('1','tc_CONST')
+
+    def __newTemp(self):
+        # Create a new temp variable, insert into SymbolTable and return
+        varName = self.__code.newTemp()
+        stPointer = self.SymbolTable.insert(varName,'tc_VAR')
+        self.__code.generate('cd_VAR',None,None,stPointer)
+        return stPointer
+
+    def __newLabel(self):
+        labelName = self.__code.newLabel()
+        stPointer = self.SymbolTable.insert(labelName,'tc_LABEL')
+        self.__code.generate('cd_LABEL',None,None,stPointer)
+
+    def printCode(self):
+        self.__code.__repr__()
+        
     def parse(self,bool=False):
         if bool: self.printTree = True
         self.__getToken()
         self.__Program()
 
+    def __getTokenCode(self):
+        return self.__currentToken.TokenCode
+
+
     def __getToken(self):
         self.__currentToken = self.__scanner.nextToken()
         if not self.__currentToken: return False
 
-        if self.__currentToken.TokenCode == 'tc_ID':
-            # Check if token exists in SymbolTable
-            entry = self.symbolTable.lookup(self.__currentToken.DataValue[0].upper())
+        if self.__getTokenCode() == 'tc_ID':
+            entry = self.SymbolTable.lookup(self.__currentToken.DataValue[0].upper())
 
             if entry == -1 :  # -1 means not found in table
                 # Entry does not exist -> add it!
-                num = self.symbolTable.insert(self.__currentToken.DataValue[0].upper(),self.__currentToken.TokenCode)
+                num = self.SymbolTable.insert(self.__currentToken.DataValue[0].upper(),self.__getTokenCode())
 
                 # Associate the token with the entry
                 self.__currentToken.setSymTabEntry(num)
@@ -74,11 +105,12 @@ class Parser:
                 # Associate the token with the entry
                 self.__currentToken.setSymTabEntry(entry)
 
-        elif self.__currentToken.TokenCode == 'tc_NUMBER':
+
+        elif self.__getTokenCode() == 'tc_NUMBER':
             # Same as for entry ..
-            entry = self.symbolTable.lookup(self.__currentToken.DataValue[0].upper())
+            entry = self.SymbolTable.lookup(self.__currentToken.DataValue[0].upper())
             if entry == -1:
-                num = self.symbolTable.insert(self.__currentToken.DataValue[0].upper(),self.__currentToken.TokenCode)
+                num = self.SymbolTable.insert(self.__currentToken.DataValue[0].upper(),self.__getTokenCode())
                 self.__currentToken.setSymTabEntry(num)
             else:
                 self.__currentToken.setSymTabEntry(entry)
@@ -97,7 +129,7 @@ class Parser:
         if self.printTree: print '\t','    '*depth,'->Trying to recover.'
         if len(syncsets[self.__errorInFunction]) == 0: return
         while True:
-            if not self.__currentToken.TokenCode in syncsets[self.__errorInFunction]:
+            if not self.__getTokenCode() in syncsets[self.__errorInFunction]:
 
                 if self.printTree: print '\t','    '*depth, '-->Discarded %s'%self.__currentToken.DataValue[0]
                 self.__getToken()
@@ -105,7 +137,7 @@ class Parser:
                     if self.printTree: print '\t','  '*(depth),'->Reached end of input, could not recover.'
                     break
             else:
-                if self.printTree: print '\t','    '*depth, '-->Match: %s with %s'%(self.__currentToken.TokenCode,self.__currentToken.TokenCode)
+                if self.printTree: print '\t','    '*depth, '-->Match: %s with %s'%(self.__getTokenCode(),self.__getTokenCode())
                 self.__foundError = False
                 self.__errorInFunction = ''
                 self.__errorDepth = None
@@ -121,9 +153,9 @@ class Parser:
         global depth
 
         # If we encounter an illegal symbol, skip passed it and report.
-        if self.__currentToken.TokenCode == 'tc_ERROR':
+        if self.__getTokenCode() == 'tc_ERROR':
             message = 'Illegal character'
-            while self.__currentToken.TokenCode == 'tc_ERROR':
+            while self.__getTokenCode() == 'tc_ERROR':
                 self.__addError(self.__currentToken,message)
                 self.__getToken()
 
@@ -131,8 +163,8 @@ class Parser:
         # or greater. Recover if error depth is smaller.
         if self.__foundError:
             if self.__errorDepth < depth:
-                if self.__currentToken.TokenCode in syncsets[self.__errorInFunction]:
-                    if self.printTree: print '\t','    '*depth,'--->Skipping', self.__currentToken.TokenCode, 'because of the Error flag.'
+                if self.__getTokenCode() in syncsets[self.__errorInFunction]:
+                    if self.printTree: print '\t','    '*depth,'--->Skipping', self.__getTokenCode(), 'because of the Error flag.'
                     return
             else:
                 #if self.printTree: print '\t','    '*depth,self.__errorInFunction, syncsets[self.__errorInFunction]
@@ -140,19 +172,19 @@ class Parser:
                 self.__getToken()
                 return
 
-        if self.printTree: print '\t','    '*depth,'-->Match:', expectedIn, 'with', self.__currentToken.TokenCode
+        if self.printTree: print '\t','    '*depth,'-->Match:', expectedIn, 'with', self.__getTokenCode()
 
         # Wrong token to what we expected. Report error.
-        if self.__currentToken.TokenCode != expectedIn:
-            if self.__currentToken.TokenCode == 'tc_ID2LONG' and expectedIn == 'tc_ID':
+        if self.__getTokenCode() != expectedIn:
+            if self.__getTokenCode() == 'tc_ID2LONG' and expectedIn == 'tc_ID':
                 message = 'Identifier too long (max 32 characters)'
                 self.__addError(self.__currentToken,message)
                 self.__getToken()
                 return
             callFunc = self.__callersname()
-            if self.__currentToken.TokenCode == 'tc_ID':
+            if self.__getTokenCode() == 'tc_ID':
                 recTC = 'an identifier'
-            elif self.__currentToken.TokenCode == 'tc_NUMBER':
+            elif self.__getTokenCode() == 'tc_NUMBER':
                 recTC = 'a number'
             else:
                 recTC = '"'+self.__currentToken.DataValue[0]+'"'
@@ -163,7 +195,7 @@ class Parser:
             self.__errorInFunction = callFunc
             self.__errorDepth = depth
 
-            if self.__currentToken.TokenCode in syncsets[callFunc]: return
+            if self.__getTokenCode() in syncsets[callFunc]: return
             if self.printTree: print '\t','    '*depth,'Discarding unexpected token "%s"'%self.__currentToken.DataValue[0]
             self.__getToken()
 
@@ -181,12 +213,17 @@ class Parser:
 
     @trackDepth
     def __Program(self):
-        self.__ProgramDefinition()
+        programName = self.__ProgramDefinition()
         self.__match('tc_SEMICOL')
+
+        self.__idList = []
         self.__Declarations()
+        self.__idList = []
+
         if self.__foundError:
             self.__recover()
             self.__getToken()
+        self.__code.generate('cd_LABEL',None,None,self.SymbolTable.SymbolTable[programName].m_lexeme)
         self.__SubprogramDeclarations()
         self.__CompoundStatement()
         self.__match('tc_DOT')
@@ -194,14 +231,19 @@ class Parser:
     @trackDepth
     def __ProgramDefinition(self):
         self.__match('tc_PROGRAM')
+        pointer = self.__currentToken.getSymTabEntry()
         self.__match('tc_ID')
         self.__match('tc_LPAREN')
         self.__IdentifierList()
         self.__match('tc_RPAREN')
+        return pointer
 
     @trackDepth
     def __IdentifierList(self):
+        pointer = self.__currentToken.getSymTabEntry()
+        self.__code.generate('cd_VAR  ',None,None,self.SymbolTable.SymbolTable[pointer].m_lexeme)
         self.__match('tc_ID')
+        
         if self.__currentToken.TokenCode == 'tc_COMMA': self.__IdentifierListRest()
 
     @trackDepth
