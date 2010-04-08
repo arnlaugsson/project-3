@@ -81,7 +81,7 @@ class Quint:
 
     def __repr__(self):
         global width
-        return self.name.rjust(width)+self.op.rjust(width)+self.arg1.rjust(width)+self.arg2.rjust(width)+self.result.rjust(width)
+        return self.name.rjust(8)+self.op.rjust(10)+self.arg1.rjust(15)+self.arg2.rjust(15)+self.result.rjust(15)
 
 
 class Code:

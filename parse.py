@@ -492,8 +492,8 @@ class compParser:
     def __WhileStatement(self,input=None):
         self.__match('tc_WHILE')
 
-        begin   = self.__newLabel()
-        end     = self.__newLabel()
+        begin   = self.__code.newLabel()
+        end     = self.__code.newLabel()
 
         self.__code.generate('cd_LABEL',None,None,begin)
 
