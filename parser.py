@@ -38,7 +38,7 @@ class Error:
     def pointPrint(self):
         return "\t"+" "*(self.columnno-2) + "^ " + self.message
 
-class Parser:
+class compParser:
     # TODO: Add code generation to the following parsing functions:
     #   Expression, SimpleExpression, Term, Termrest, Factor, FactorRest
     # TODO: create functions: opToCode, getSymbolTable, getCode

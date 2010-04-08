@@ -6,7 +6,7 @@
 # -*- coding: utf-8 -*-
 import sys
 from ply.lex import lex
-from parser import Parser
+from parser import compParser
 
 def sep():
     print '--------------------------------------------------------------'
@@ -48,7 +48,7 @@ Using default input file."""
     filename = 'input/'+inputFile
     sep()
     print 'Using input "%s"'%inputFile
-    parser = Parser(filename)
+    parser = compParser(filename)
 
     # Start parsing!
     parser.parse(tree)
