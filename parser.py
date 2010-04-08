@@ -118,6 +118,8 @@ class Parser:
     def __callersname(self):
         return sys._getframe(2).f_code.co_name
 
+
+
     def __addError(self,token,message):
         self.errors.append(Error(token.lineno,token.columnno,message))
 
@@ -186,7 +188,7 @@ class Parser:
                 recTC = 'a number'
             else:
                 recTC = '"'+self.__currentToken.DataValue[0]+'"'
-            message = 'Expected %s'%token.tc2Name[expectedIn]
+            message = 'Expected %s (%s)'%(token.tc2Name[expectedIn],callFunc)
             if self.printTree: print '\t','    '*depth,'Error: Could not match at depth %d'%depth
             self.__addError(self.__currentToken,message)
             self.__foundError = True
@@ -226,6 +228,10 @@ class Parser:
         self.__code.generateVariables(self.__tempList)
         # And flush list.
         self.__tempList = []
+
+        if self.__foundError:
+            self.__recover()
+            self.__getToken()
 
         self.__code.generate('cd_GOTO',None,None,programName)
 
@@ -446,7 +452,25 @@ class Parser:
     @trackDepth
     def __IfStatement(self,input=None):
         self.__match('tc_IF')
-        self.__Expression()
+
+        end     = self.__code.newLabel()
+        ifFalse = self.__code.newLabel()
+        temp    = self.__code.newTemp()
+
+
+        ifTrue = self.__Expression()
+
+        compare = self.__code.newLabel()
+
+        self.__code.generate('cd_ASSIGN',self.SymbolTable.SymbolTable[self.SymbolTable.lookup('0')].m_lexeme,None,temp)
+        self.__code.generate('cd_GOTO',None,None,compare)
+
+        self.__code.generate('cd_LABEL',None,None,ifTrue)
+        self.__code.generate('cd_ASSIGN',self.SymbolTable.SymbolTable[self.SymbolTable.lookup('1')].m_lexeme,None,temp)
+
+        self.__code.generate('cd_LABEL',None,None,compare)
+        self.__code.generate('cd_EQ',temp,self.SymbolTable.SymbolTable[self.SymbolTable.lookup('0')].m_lexeme,ifFalse)
+
 
         if self.__currentToken.TokenCode == 'tc_THEN':
             self.__match('tc_THEN')
@@ -454,8 +478,14 @@ class Parser:
             self.__missingSingle('tc_THEN')
 
         self.__Statement()
+
+        self.__code.generate('cd_GOTO',None,None,end)
+
         self.__match('tc_ELSE')
+
+        self.__code.generate('tc_LABEL',None,None,ifFalse)
         self.__Statement()
+        self.__code.generate('tc_LABEL',None,None,end)
 
     @trackDepth
     def __WhileStatement(self,input=None):
@@ -494,10 +524,10 @@ class Parser:
         if self.__currentToken.TokenCode == 'tc_RELOP':
             op = self.__currentToken.DataValue[1]
             self.__match('tc_RELOP')
+            label = self.__code.newLabel()
             entry = self.__SimpleExpression()
-            pointer = self.__newTemp()
-            self.__code.generate(op,self.SymbolTable.SymbolTable[prevEntryPointer].m_lexeme,self.SymbolTable.SymbolTable[entry].m_lexeme,self.SymbolTable.SymbolTable[pointer].m_lexeme)
-            return pointer            
+            self.__code.generate(op,self.SymbolTable.SymbolTable[prevEntryPointer].m_lexeme,self.SymbolTable.SymbolTable[entry].m_lexeme,label)
+            return label            
         else:
             return prevEntryPointer
 
@@ -507,17 +537,17 @@ class Parser:
         if self.__currentToken.TokenCode == 'tc_ADDOP':
             op = self.__currentToken.DataValue[1]
             if op == 'op_MINUS':
-                temp = self.__newTemp()
                 uminus = True
             self.__match('tc_ADDOP')
 
         entry = self.__Term()
-        if uminus:
-            self.__code.generate('cd_UMINUS',self.SymbolTable.SymbolTable[entry].m_lexeme,None,self.SymbolTable.SymbolTable[temp].m_lexeme)
-            entry = temp
+
             
         entry = self.__SimpleExpressionAddop(entry)
-
+        if uminus:
+            temp = self.__newTemp()
+            self.__code.generate('cd_UMINUS',self.SymbolTable.SymbolTable[entry].m_lexeme,None,self.SymbolTable.SymbolTable[temp].m_lexeme)
+            entry = temp
 
         return entry
         

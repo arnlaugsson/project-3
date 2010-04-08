@@ -98,10 +98,13 @@ class Code:
 
     def __repr__(self):
         global width
+        line = 1
         # Pretty print?
         # Called print() in c++ header file
         print 'Op'.rjust(width) + 'Arg1'.rjust(width) + 'Arg2'.rjust(width) + 'Result'.rjust(width)
         print '----------'.rjust(width) + '----------'.rjust(width) + '----------'.rjust(width) + '----------'.rjust(width)
         for qdr in self.__List:
-            print qdr.__repr__()
+            print qdr.__repr__(), '\t',line
+            #print '------------------------------------------------------------'
+            line += 1
         pass

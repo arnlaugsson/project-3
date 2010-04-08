@@ -14,6 +14,8 @@ from token import op_Type
 # read in previous lines.
 
 previousLexPosLineCount = 0
+maxLenghtOfIdentifier   = 32
+
 
 # *** Simple Regular expressions *************************************
 # Simple regular expressions for tokens that have no dataType and no
@@ -105,7 +107,7 @@ def t_tc_ID(t):
         t.DataType = 'dt_ID'
     return t
 
-    
+
 def t_newline(t):
     r'\n+'
     # Update the read lexpos counter and lineno count.
