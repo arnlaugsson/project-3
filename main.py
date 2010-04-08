@@ -6,7 +6,7 @@
 # -*- coding: utf-8 -*-
 import sys
 from ply.lex import lex
-from parser import compParser
+from parse import compParser
 
 def sep():
     print '--------------------------------------------------------------'

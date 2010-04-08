@@ -1,4 +1,4 @@
-width = 15
+width = 10
 
 CodeOp = [ 'cd_LABEL', 'cd_UMINUS', 'cd_ASSIGN',
            'cd_ADD', 'cd_SUB', 'cd_MULT', 'cd_DIVIDE',
@@ -15,7 +15,26 @@ class Quadruple:
         self.__result = result      # Symbol-tableEntry or Label
 
     def getOp(self):
-        return self.__op
+        if self.__op != None:
+            return self.__op[3:]
+        return ' '
+
+    def getArg1(self):
+        if self.__arg1  != None:
+            return self.__arg1
+        return ' '
+
+    def getArg2(self):
+        if self.__arg2 != None:
+            return self.__arg2
+        return ' '
+
+    def getResult(self):
+        if self.__result != None:
+            return self.__result.lower()
+        return ' '
+
+
 
     def set(self,op,arg1,arg2,result):
         self.__op     = op
@@ -34,6 +53,36 @@ class Quadruple:
         else: result = ''.rjust(width)
         return op+arg1+arg2+result
 
+    def tacPrint(self):
+        global width
+        op = self.__op[3:].rjust(width)
+        if op == 'LABEL':
+            op = '%s:'%self.__result.lower()
+            arg1 = ''.rjust(width)
+            arg2 = ''.rjust(width)
+            result = str(self.__result).lower().rjust(width)
+
+
+        if self.__arg1: arg1 = self.__arg1.lower().rjust(width)
+        else: arg1 = ''.rjust(width)
+        if self.__arg2: arg2 = self.__arg2.lower().rjust(width)
+        else: arg2 = ''.rjust(width)
+        if self.__result: result = str(self.__result).lower().rjust(width)
+        else: result = ''.rjust(width)
+        return op+arg1+arg2+result
+
+class Quint:
+    def __init__(self,name=' ',op=' ',arg1=' ',arg2=' ',result=' '):
+        self.name = name
+        self.op = op
+        self.arg1 = arg1
+        self.arg2 = arg2
+        self.result = result
+
+    def __repr__(self):
+        global width
+        return self.name.rjust(width)+self.op.rjust(width)+self.arg1.rjust(width)+self.arg2.rjust(width)+self.result.rjust(width)
+
 
 class Code:
     # TODO: Create a pretty print function to represent TAC
@@ -51,6 +100,7 @@ class Code:
 
     def __init__(self):
         self.__List = []
+        self.__quintList = []
         self.__tempVariables = 0
         self.__labels = 0
 
@@ -96,6 +146,18 @@ class Code:
         varName = 't'+str(self.__tempVariables)
         return varName
 
+    def readyForPrint(self):
+        global width
+        label = ''
+        for qdr in self.__List:
+            if qdr.getOp() == 'LABEL':
+                label = '%s:'%qdr.getResult()
+            else:
+                quint = Quint(label,qdr.getOp(),qdr.getArg1(),qdr.getArg2(),qdr.getResult())
+                self.__quintList.append(quint)
+                label = ''
+
+
     def __repr__(self):
         global width
         line = 1
@@ -107,4 +169,10 @@ class Code:
             print qdr.__repr__(), '\t',line
             #print '------------------------------------------------------------'
             line += 1
-        pass
+
+    def printTac(self):
+        self.readyForPrint()
+        global width
+
+        for quint in self.__quintList:
+            print quint.__repr__()

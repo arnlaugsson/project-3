@@ -74,8 +74,9 @@ class compParser:
         self.__code.generate('cd_LABEL',None,None,self.SymbolTable.SymbolTable[stPointer].m_lexeme)
 
     def printCode(self):
-        self.__code.__repr__()
-        
+        #self.__code.__repr__()
+        self.__code.printTac()
+
     def parse(self,bool=False):
         if bool: self.printTree = True
         self.__getToken()
