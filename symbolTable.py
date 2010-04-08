@@ -45,17 +45,15 @@ class SymbolTable:
         return -1
 
     def __repr__(self):
-        format_num = 5
-        format_lex = 10
+        width = 20
 
-        print '  -------------------------------'
-        print '            SYMBOLTABLE'
-        print '  Entry'.rjust(format_num) + '\t'+ 'TC' + '\t' + ' Lexeme'.rjust(format_lex)
-        print '  -------------------------------'
+        print 'Entry'.rjust(width) + ' Lexeme'.rjust(width)
+        print '----------'.rjust(width) + '----------'.rjust(width)
+
         for i,entry in enumerate(self.SymbolTable):
-            print '%s\t%s\t%s'%(str(i).rjust(format_num),entry.getTC(),entry.getLexeme().rjust(format_lex))
+            print str(i).rjust(width) + entry.getLexeme().rjust(width)
 
-        print '  -------------------------------'
+        print '--------------------------------------------------------------'
 
 
 

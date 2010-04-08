@@ -1,4 +1,4 @@
-
+width = 15
 
 CodeOp = [ 'cd_LABEL', 'cd_UMINUS', 'cd_ASSIGN',
            'cd_ADD', 'cd_SUB', 'cd_MULT', 'cd_DIVIDE',
@@ -24,7 +24,15 @@ class Quadruple:
         self.__result = result
 
     def __repr__(self):
-        return str(self.__op) + '\t' + str(self.__arg1) + '\t\t' + str(self.__arg2) + '\t\t' + str(self.__result)
+        global width
+        op = self.__op[3:].rjust(width)
+        if self.__arg1: arg1 = self.__arg1.rjust(width)
+        else: arg1 = ''.rjust(width)
+        if self.__arg2: arg2 = self.__arg2.rjust(width)
+        else: arg2 = ''.rjust(width)
+        if self.__result: result = str(self.__result).rjust(width)
+        else: result = ''.rjust(width)
+        return op+arg1+arg2+result
 
 
 class Code:
@@ -39,6 +47,7 @@ class Code:
     #
     #       Label:  op      arg1    arg2    result
     #       test:   Assign  1       _       t1
+    pass
 
     def __init__(self):
         self.__List = []
@@ -67,6 +76,12 @@ class Code:
             qdr = Quadruple('cd_VAR',None,None,variable)
             self.__List.append(qdr)
 
+    def generateFParams(self,eList):
+        for variable in eList:
+            qdr = Quadruple('cd_FPARAM',None,None,variable)
+            self.__List.append(qdr)
+
+
     def newLabel(self):
         self.__labels += 1
         labelName = 'lab'+str(self.__labels)
@@ -78,11 +93,11 @@ class Code:
         return varName
 
     def __repr__(self):
+        global width
         # Pretty print?
         # Called print() in c++ header file
-        print
-        print 'TAC preview..'
-        print 'Op' + '\t\t' + 'Arg1' + '\t\t' + 'Arg2' + '\t\t' + 'Result'
+        print 'Op'.rjust(width) + 'Arg1'.rjust(width) + 'Arg2'.rjust(width) + 'Result'.rjust(width)
+        print '----------'.rjust(width) + '----------'.rjust(width) + '----------'.rjust(width) + '----------'.rjust(width)
         for qdr in self.__List:
             print qdr.__repr__()
         pass

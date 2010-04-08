@@ -8,33 +8,58 @@ import sys
 from ply.lex import lex
 from parser import Parser
 
+def sep():
+    print '--------------------------------------------------------------'
+
+
 def main(*args):
+    usage = """
+    Python parser for a small Pascal-like language
+    
+    Preferred calling method:
+        $ python main.py [inputFile] [options]
+
+    Options:
+      -  tree    :Show parsing trace
+      -  tac     :Show TAC code
+      -  table   :Show Symbol table
+
+    Example input files:
+      -  pas_syntax_ok     
+      -  pas_syntax_err
+      -  functionCall
+
+Using default input file."""
     # TODO: Add options for the TAC code (print to screen or file)
     # Generate our parser, with the given input
 
+    tree, tac, table = False, False, False
+    inputFile = 'example'
+
     if len(sys.argv) > 1:
-        inputFile = sys.argv[1]
-        if len(sys.argv) > 2:
-            option = True
-        else:
-            option = False
+        if sys.argv[1].lower() not in ('tree','tac','table'): inputFile = sys.argv[1]
+        for param in sys.argv:
+            if param.lower() == 'tree': tree = True
+            elif param.lower() == 'tac': tac = True
+            elif param.lower() == 'table': table = True
     else:
-        inputFile = 'pas_syntax_ok'
-        option = False
+        print usage
 
     filename = 'input/'+inputFile
-    print '  -------------------------------'
-    print '  Using input "%s"'%inputFile
-    print '  -------------------------------'
+    sep()
+    print 'Using input "%s"'%inputFile
     parser = Parser(filename)
 
     # Start parsing!
-    parser.parse(option)
+    parser.parse(tree)
 
     fileHandler = open(filename)
     pointer = 0
 
-    if not option:
+    if len(parser.errors) > 0:
+        sep()
+
+    if not tree:
         while True:
             pointer += 1
             line = fileHandler.readline()
@@ -50,16 +75,17 @@ def main(*args):
                 for error in lineErrors:
                     print error.pointPrint()
 
-
+    if tree: sep()
 
     if len(parser.errors) == 0:
-        print '  No errors were detected.'
-        parser.SymbolTable.__repr__()
-        parser.printCode()
+        print 'No errors were detected.'
+        sep()
+        if table:   parser.SymbolTable.__repr__()
+        if tac:     parser.printCode()
     else:
-        print '  -------------------------------'
-        print '  %d errors were encountered.'%len(parser.errors)
-
+        sep()
+        print '%d errors were encountered.'%len(parser.errors)
+        sep()
 
 if __name__ == '__main__':
 	sys.exit(main(*sys.argv))
