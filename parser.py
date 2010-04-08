@@ -18,10 +18,7 @@ def trackDepth(func):
         global depth
         if classInstance.printTree: print depth,'\t','    '*depth,'Opening:', func.__name__
         depth += 1
-        if input:
-            value = func(classInstance,input)
-        else:
-            value = func(classInstance)
+        value = func(classInstance,input)
         depth -= 1
         if classInstance.printTree: print depth,'\t','    '*depth,'Closing:',  func.__name__
         return value
@@ -211,7 +208,7 @@ class Parser:
         self.__addError(self.__currentToken,message)
 
     @trackDepth
-    def __Program(self):
+    def __Program(self,input=None):
         # ProgramDefinition returns the program name (string)
         programName = self.__ProgramDefinition()
 
@@ -241,7 +238,7 @@ class Parser:
         self.__code.generate('cd_RETURN',None,None,None)        
 
     @trackDepth
-    def __ProgramDefinition(self):
+    def __ProgramDefinition(self,input=None):
         self.__match('tc_PROGRAM')
         pointer = self.__currentToken.getSymTabEntry()
         name = self.SymbolTable.SymbolTable[pointer].m_lexeme
@@ -252,7 +249,7 @@ class Parser:
         return name
 
     @trackDepth
-    def __IdentifierList(self):
+    def __IdentifierList(self,input=None):
         lexeme = self.SymbolTable.SymbolTable[self.__currentToken.getSymTabEntry()].m_lexeme
         self.__tempList.append(lexeme)
         self.__match('tc_ID')
@@ -260,18 +257,18 @@ class Parser:
         if self.__currentToken.TokenCode == 'tc_COMMA': self.__IdentifierListRest()
 
     @trackDepth
-    def __IdentifierListRest(self):
+    def __IdentifierListRest(self,input=None):
         self.__match('tc_COMMA')
         self.__IdentifierList()
 
     @trackDepth
-    def __IdentifierListAndType(self):
+    def __IdentifierListAndType(self,input=None):
         self.__IdentifierList()
         self.__match('tc_COLON')
         self.__Type()
 
     @trackDepth
-    def __Declarations(self):
+    def __Declarations(self,input=None):
         if self.__currentToken.TokenCode == 'tc_VAR':
             self.__match('tc_VAR')
             self.__IdentifierListAndType()
@@ -279,13 +276,13 @@ class Parser:
             self.__Declarations()
 
     @trackDepth
-    def __Type(self):
+    def __Type(self,input=None):
         if self.__currentToken.TokenCode == 'tc_ARRAY':self.__TypeArray()
         self.__StandardType()
 
 
     @trackDepth
-    def __TypeArray(self):
+    def __TypeArray(self,input=None):
         self.__match('tc_ARRAY')
         self.__match('tc_LBRACKET')
         self.__match('tc_NUMBER')
@@ -296,7 +293,7 @@ class Parser:
 
 
     @trackDepth
-    def __StandardType(self):
+    def __StandardType(self,input=None):
         if self.__currentToken.TokenCode == 'tc_INTEGER':
             self.__match('tc_INTEGER')
         elif self.__currentToken.TokenCode == 'tc_REAL':
@@ -306,7 +303,7 @@ class Parser:
                 self.__match('tc_INTEGER')
 
     @trackDepth
-    def __SubprogramDeclarations(self):
+    def __SubprogramDeclarations(self,input=None):
         if self.__currentToken.TokenCode in ('tc_FUNCTION','tc_PROCEDURE'):
             self.__SubprogramDeclaration()
             self.__match('tc_SEMICOL')
@@ -314,7 +311,7 @@ class Parser:
             self.__SubprogramDeclarations()
 
     @trackDepth
-    def __SubprogramDeclaration(self):
+    def __SubprogramDeclaration(self,input=None):
         self.__SubprogramHead()
         self.__match('tc_SEMICOL')
 
@@ -325,7 +322,7 @@ class Parser:
         self.__CompoundStatement()
 
     @trackDepth
-    def __SubprogramHead(self):
+    def __SubprogramHead(self,input=None):
         if self.__currentToken.TokenCode == 'tc_FUNCTION':
             self.__Function()
 
@@ -333,7 +330,7 @@ class Parser:
             self.__Procedure()
 
     @trackDepth
-    def __Function(self):
+    def __Function(self,input=None):
         self.__match('tc_FUNCTION')
         pointer = self.__currentToken.getSymTabEntry()
         self.__code.generate('cd_LABEL',None,None,self.SymbolTable.SymbolTable[pointer].m_lexeme)        
@@ -345,7 +342,7 @@ class Parser:
         self.__StandardType()
 
     @trackDepth
-    def __Procedure(self):
+    def __Procedure(self,input=None):
         self.__match('tc_PROCEDURE')
         pointer = self.__currentToken.getSymTabEntry()
         self.__code.generate('cd_LABEL',None,None,self.SymbolTable.SymbolTable[pointer].m_lexeme)        
@@ -354,7 +351,7 @@ class Parser:
         self.__Arguments()
 
     @trackDepth
-    def __Arguments(self):
+    def __Arguments(self,input=None):
         if self.__currentToken.TokenCode == 'tc_LPAREN':
             self.__match('tc_LPAREN')
 
@@ -365,41 +362,41 @@ class Parser:
             self.__match('tc_RPAREN')
 
     @trackDepth
-    def __ParameterList(self):
+    def __ParameterList(self,input=None):
         self.__IdentifierListAndType()
         self.__ParameterListRest()
 
     @trackDepth
-    def __ParameterListRest(self):
+    def __ParameterListRest(self,input=None):
         if self.__currentToken.TokenCode == 'tc_SEMICOL':
             self.__match('tc_SEMICOL')
             self.__IdentifierListAndType()
             self.__ParameterListRest()
 
     @trackDepth
-    def __CompoundStatement(self):
+    def __CompoundStatement(self,input=None):
         self.__match('tc_BEGIN')
         self.__OptionalStatements()
         self.__match('tc_END')
 
     @trackDepth
-    def __OptionalStatements(self):
+    def __OptionalStatements(self,input=None):
         self.__StatementList()
 
     @trackDepth
-    def __StatementList(self):
+    def __StatementList(self,input=None):
         self.__Statement()
         self.__StatementListRest()
 
     @trackDepth
-    def __StatementListRest(self):
+    def __StatementListRest(self,input=None):
         if self.__currentToken.TokenCode == 'tc_SEMICOL':
             self.__match('tc_SEMICOL')
             self.__Statement()
             self.__StatementListRest()
 
     @trackDepth
-    def __Statement(self):
+    def __Statement(self,input=None):
         if self.__currentToken.TokenCode == 'tc_BEGIN':
             self.__CompoundStatement()
 
@@ -410,7 +407,6 @@ class Parser:
             self.__WhileStatement()
         elif self.__currentToken.TokenCode == 'tc_ID':
             pointer = self.__currentToken.getSymTabEntry()
-            self.__code.generate('cd_VAR',None,None,self.SymbolTable.SymbolTable[pointer].m_lexeme)
             self.__match('tc_ID')
             self.__IdOrProcedureStatement(pointer)
         else:
@@ -419,7 +415,7 @@ class Parser:
 
 
     @trackDepth
-    def __ArrayReference(self):
+    def __ArrayReference(self,input=None):
         self.__match('tc_LBRACKET')
         self.__Expression()
         self.__match('tc_RBRACKET')
@@ -440,11 +436,15 @@ class Parser:
 
         elif self.__currentToken.TokenCode == 'tc_LPAREN':
             self.__match('tc_LPAREN')
+            self.__tempList = []            
             self.__ExpressionList()
+            self.__code.generateAParams(self.__tempList)
+            self.__tempList = []
+            self.__code.generate('cd_CALL',self.SymbolTable.SymbolTable[prevEntryPointer].m_lexeme,None,None)
             self.__match('tc_RPAREN')
 
     @trackDepth
-    def __IfStatement(self):
+    def __IfStatement(self,input=None):
         self.__match('tc_IF')
         self.__Expression()
 
@@ -458,7 +458,7 @@ class Parser:
         self.__Statement()
 
     @trackDepth
-    def __WhileStatement(self):
+    def __WhileStatement(self,input=None):
         self.__match('tc_WHILE')
         self.__Expression()
         if self.__currentToken.TokenCode == 'tc_DO':
@@ -469,85 +469,126 @@ class Parser:
 
 
     @trackDepth
-    def __ExpressionList(self):
-        self.__Expression()
+    def __ExpressionList(self,input=None):
+        expr = self.__Expression()
+        self.__tempList.append(self.SymbolTable.SymbolTable[expr].m_lexeme)
         self.__ExpressionListRest()
-        # Todo: generate expressions in tempList
+
 
     @trackDepth
-    def __ExpressionListRest(self):
+    def __ExpressionListRest(self,input=None):
         if self.__currentToken.TokenCode == 'tc_COMMA':
             self.__match('tc_COMMA')
-            self.__Expression()
+            expr = self.__Expression()
+            self.__tempList.append(self.SymbolTable.SymbolTable[expr].m_lexeme)
             self.__ExpressionListRest()
 
     @trackDepth
-    def __Expression(self):
+    def __Expression(self,input=None):
         entry = self.__SimpleExpression()
         entry = self.__SimpleExpressionRelop(entry)
         return entry
 
     @trackDepth
-    def __SimpleExpressionRelop(self,):
+    def __SimpleExpressionRelop(self,prevEntryPointer=None):
         if self.__currentToken.TokenCode == 'tc_RELOP':
+            op = self.__currentToken.DataValue[1]
             self.__match('tc_RELOP')
-            self.__SimpleExpression()
+            entry = self.__SimpleExpression()
+            pointer = self.__newTemp()
+            self.__code.generate(op,self.SymbolTable.SymbolTable[prevEntryPointer].m_lexeme,self.SymbolTable.SymbolTable[entry].m_lexeme,self.SymbolTable.SymbolTable[pointer].m_lexeme)
+            return pointer            
+        else:
+            return prevEntryPointer
 
     @trackDepth
-    def __SimpleExpression(self):
+    def __SimpleExpression(self,input=None):
+        uminus = False
         if self.__currentToken.TokenCode == 'tc_ADDOP':
+            op = self.__currentToken.DataValue[1]
+            if op == 'op_MINUS':
+                temp = self.__newTemp()
+                uminus = True
             self.__match('tc_ADDOP')
-        self.__Term()
-        self.__SimpleExpressionAddop()
+
+        entry = self.__Term()
+        if uminus:
+            self.__code.generate('cd_UMINUS',self.SymbolTable.SymbolTable[entry].m_lexeme,None,self.SymbolTable.SymbolTable[temp].m_lexeme)
+            entry = temp
+            
+        entry = self.__SimpleExpressionAddop(entry)
+
+
+        return entry
         
 
 
     @trackDepth
-    def __SimpleExpressionAddop(self):
+    def __SimpleExpressionAddop(self,prevEntryPointer):
         if self.__currentToken.TokenCode == 'tc_ADDOP':
+            op = self.__currentToken.DataValue[1]
             self.__match('tc_ADDOP')
-            self.__Term()
-            self.__SimpleExpressionAddop()
+            entry = self.__Term()
+            entry = self.__SimpleExpressionAddop(entry)
+            pointer = self.__newTemp()
+            self.__code.generate(op,self.SymbolTable.SymbolTable[prevEntryPointer].m_lexeme,self.SymbolTable.SymbolTable[entry].m_lexeme,self.SymbolTable.SymbolTable[pointer].m_lexeme)
+            return pointer
+        else:
+            return prevEntryPointer
 
     @trackDepth
-    def __Term(self):
-        self.__Factor()
-        self.__TermRest()
+    def __Term(self,input=None):
+        entry = self.__Factor()
+        entry = self.__TermRest(entry)
+        return entry
 
     @trackDepth
-    def __TermRest(self):
+    def __TermRest(self,prevEntryPointer=None):
         if self.__currentToken.TokenCode == 'tc_MULOP':
+            op = self.__currentToken.DataValue[1]
             self.__match('tc_MULOP')
-            self.__Term()
+            entry = self.__Term()
+            temp = self.__newTemp()
+            self.__code.generate(op,self.SymbolTable.SymbolTable[prevEntryPointer].m_lexeme,self.SymbolTable.SymbolTable[entry].m_lexeme,self.SymbolTable.SymbolTable[temp].m_lexeme)
+            return temp
+        else:
+            return prevEntryPointer
 
     @trackDepth
-    def __Factor(self):
+    def __Factor(self,input=None):
         if self.__currentToken.TokenCode == 'tc_LPAREN':
             self.__match('tc_LPAREN')
-            self.__Expression()
+            entry = self.__Expression()
             self.__match('tc_RPAREN')
         elif self.__currentToken.TokenCode == 'tc_NOT':
             self.__match('tc_NOT')
-            self.__Factor()
+            entry =self.__Factor()
         elif self.__currentToken.TokenCode == 'tc_NUMBER':
-            self.__currentToken.getSymTabEntry()
+            entry = self.__currentToken.getSymTabEntry()
             self.__match('tc_NUMBER')
         elif self.__currentToken.TokenCode == 'tc_ID':
-            self.__currentToken.getSymTabEntry()
+            entry = self.__currentToken.getSymTabEntry()
             self.__match('tc_ID')
-            self.__FactorRest()
+            entry = self.__FactorRest(entry)
         else:
             self.__missingSingle('an identifier')
+            entry =  0
+        return entry
 
     @trackDepth
-    def __FactorRest(self):
+    def __FactorRest(self,prevEntry):
         if self.__currentToken.TokenCode == 'tc_LPAREN':
             self.__match('tc_LPAREN')
+            self.__tempList = []            
             self.__ExpressionList()
+            self.__code.generateAParams(self.__tempList)
+            self.__tempList = []
+            self.__code.generate('cd_CALL',self.SymbolTable.SymbolTable[prevEntry].m_lexeme,None,None)
             self.__match('tc_RPAREN')
 
         elif self.__currentToken.TokenCode == 'tc_LBRACKET':
             self.__ArrayReference()
 
+        return prevEntry
 
 

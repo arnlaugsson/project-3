@@ -26,11 +26,11 @@ class Quadruple:
     def __repr__(self):
         global width
         op = self.__op[3:].rjust(width)
-        if self.__arg1: arg1 = self.__arg1.rjust(width)
+        if self.__arg1: arg1 = self.__arg1.lower().rjust(width)
         else: arg1 = ''.rjust(width)
-        if self.__arg2: arg2 = self.__arg2.rjust(width)
+        if self.__arg2: arg2 = self.__arg2.lower().rjust(width)
         else: arg2 = ''.rjust(width)
-        if self.__result: result = str(self.__result).rjust(width)
+        if self.__result: result = str(self.__result).lower().rjust(width)
         else: result = ''.rjust(width)
         return op+arg1+arg2+result
 
@@ -81,6 +81,10 @@ class Code:
             qdr = Quadruple('cd_FPARAM',None,None,variable)
             self.__List.append(qdr)
 
+    def generateAParams(self,eList):
+        for variable in eList:
+            qdr = Quadruple('cd_APARAM',None,None,variable)
+            self.__List.append(qdr)
 
     def newLabel(self):
         self.__labels += 1
