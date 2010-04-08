@@ -490,12 +490,27 @@ class Parser:
     @trackDepth
     def __WhileStatement(self,input=None):
         self.__match('tc_WHILE')
-        self.__Expression()
+
+        begin   = self.__newLabel()
+        end     = self.__newLabel()
+
+        self.__code.generate('cd_LABEL',None,None,begin)
+
+        ifTrue = self.__Expression()
+
+        self.__code.generate('cd_GOTO',None,None,end)
+        self.__code.generate('cd_LABEL',None,None,ifTrue)
+
         if self.__currentToken.TokenCode == 'tc_DO':
             self.__match('tc_DO')
         else:
             self.__missingSingle('tc_DO')
+
+
         self.__Statement()
+
+        self.__code.generate('cd_GOTO',None,None,begin)
+        self.__code.generate('cd_LABEL',None,None,end)
 
 
     @trackDepth
