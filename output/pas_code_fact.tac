@@ -8,7 +8,7 @@
             ASSIGN              0                            t1
               GOTO                                         lab4
    lab3:    ASSIGN              1                            t1
-   lab4:        EQ              9              0           lab2
+   lab4:        EQ             t1              0           lab2
             ASSIGN              1                          fact
               GOTO                                         lab1
    lab2:       VAR                                           t2
@@ -17,7 +17,7 @@
               CALL           fact                              
             ASSIGN           fact                             k
                VAR                                           t3
-              MULT              6              8             t3
+              MULT              n              k             t3
             ASSIGN             t3                          fact
    lab1:    RETURN                                             
 example:    ASSIGN              5                             j

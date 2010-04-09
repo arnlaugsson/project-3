@@ -10,7 +10,7 @@
    mult:    FPARAM                                            x
             FPARAM                                            y
                VAR                                           t2
-              MULT              5              6             t2
+              MULT              x              y             t2
             ASSIGN             t2                          mult
             RETURN                                             
 toscreen:    FPARAM                                            x

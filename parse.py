@@ -471,7 +471,7 @@ class compParser:
         self.__code.generate('cd_LABEL',None,None,ifTrue)
         self.__code.generate('cd_ASSIGN',self.SymbolTable.SymbolTable[self.SymbolTable.lookup('1')].m_lexeme,None,self.SymbolTable.SymbolTable[temp].m_lexeme)
         self.__code.generate('cd_LABEL',None,None,compare)
-        self.__code.generate('cd_EQ',temp,self.SymbolTable.SymbolTable[self.SymbolTable.lookup('0')].m_lexeme,ifFalse)
+        self.__code.generate('cd_EQ',self.SymbolTable.SymbolTable[temp].m_lexeme,self.SymbolTable.SymbolTable[self.SymbolTable.lookup('0')].m_lexeme,ifFalse)
         ##########################################################################
 
         if self.__currentToken.TokenCode == 'tc_THEN':
@@ -623,7 +623,7 @@ class compParser:
 
             ################################ CODE GEN ################################
             temp = self.__newTemp()
-            self.__code.generate(op,prevEntryPointer,entry,self.SymbolTable.SymbolTable[temp].m_lexeme)
+            self.__code.generate(op,self.SymbolTable.SymbolTable[prevEntryPointer].m_lexeme,self.SymbolTable.SymbolTable[entry].m_lexeme,self.SymbolTable.SymbolTable[temp].m_lexeme)
             ##########################################################################
 
             return temp

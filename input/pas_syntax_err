@@ -17,20 +17,20 @@ end;
 begin
     y := 2.0*(3.14!$);
     if y>2.0
-    begin
-        y := 123.45E-3;
-        x := x + 1
-    end
-    else
-    begin
-        y := ftest(x);
-        y := y+2.0
-    end;
+	begin
+		y := 123.45E-3;
+		x := x + 1
+	end
+	else
+	begin
+		y := ftest(x);
+		y := y+2.0
+	end;
 
-    while (x<4)
-    begin
-       y := ftest (x;
-       x := x +
-    end
+	while (x<4)
+	begin
+	   y := ftest (x;
+	   x := x +
+	end
 .
  
