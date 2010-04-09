@@ -583,8 +583,13 @@ class compParser:
 
     @trackDepth
     def __SimpleExpressionAddop(self,prevEntryPointer):
+        orSentence = False
         if self.__currentToken.TokenCode == 'tc_ADDOP':
             op = self.__currentToken.DataValue[1]
+            if op == 'OR':
+                orSentence = True
+                # Need to implement
+
             self.__match('tc_ADDOP')
             entry = self.__Term()
             entry = self.__SimpleExpressionAddop(entry)
@@ -606,14 +611,19 @@ class compParser:
 
     @trackDepth
     def __TermRest(self,prevEntryPointer=None):
+        andSentence = False
         if self.__currentToken.TokenCode == 'tc_MULOP':
             op = self.__currentToken.DataValue[1]
+            if op == 'op_AND':
+                andSentence = True
+                # Need to implement
+
             self.__match('tc_MULOP')
             entry = self.__Term()
 
             ################################ CODE GEN ################################
             temp = self.__newTemp()
-            self.__code.generate(op,self.SymbolTable.SymbolTable[prevEntryPointer].m_lexeme,self.SymbolTable.SymbolTable[entry].m_lexeme,self.SymbolTable.SymbolTable[temp].m_lexeme)
+            self.__code.generate(op,prevEntryPointer,entry,temp)
             ##########################################################################
 
             return temp

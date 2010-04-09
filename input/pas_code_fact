@@ -1,0 +1,24 @@
+program example(input, output);
+var j : integer;
+var n : integer;
+
+	function fact(n:integer):integer;
+	var k:integer;
+	begin
+		if (n<1) then
+			fact := 1
+		else begin
+			k := fact(n-1);
+			fact := n * k
+		end
+	end;
+
+begin
+	j := 5;
+	while (j>0) do begin
+		n := fact(j);
+		writeln(n);
+		j := j - 1
+	end
+end.
+ 

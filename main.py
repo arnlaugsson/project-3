@@ -4,6 +4,7 @@
 
 # This is the lexical analyser file as requested in part 5 of the assignment.
 # -*- coding: utf-8 -*-
+import os
 import sys
 from ply.lex import lex
 from parse import compParser
@@ -77,8 +78,8 @@ Using default input file."""
     else:
         print usage
 
-    filename = 'input/'+inputFile
-    outputFile = 'output/'+outputFile
+    filename = 'input'+os.sep+inputFile
+    outputFile = 'output'+os.sep+outputFile
     sep()
     print 'Using input "%s"'%filename
     parser = compParser(filename)

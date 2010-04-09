@@ -36,15 +36,19 @@ class Quint:
     def __repr__(self):
         global width
         if self.name == None: name = ''
-        else: name = self.name.lower()
+        else: name = str(self.name).lower()
         if self.op == None: op = ''
-        else: op = self.op[3:]
+        else:
+            if self.op == 'op_PLUS': op = 'ADD'
+            elif self.op == 'op_MINUS': op = 'SUB'
+            else:
+                op = self.op[3:]
         if self.arg1 == None:  arg1= ''
-        else:  arg1= self.arg1.lower()
+        else:  arg1= str(self.arg1).lower()
         if self.arg2 == None: arg2= ''
-        else:  arg2 = self.arg2.lower()
+        else:  arg2 = str(self.arg2).lower()
         if self.result == None:  result= ''
-        else:  result = self.result.lower()
+        else:  result = str(self.result).lower()
         return name.rjust(8)+op.rjust(10)+arg1.rjust(15)+arg2.rjust(15)+result.rjust(15)
 
 
