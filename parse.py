@@ -459,17 +459,17 @@ class compParser:
         ################################ CODE GEN ################################
         end     = self.__code.newLabel()
         ifFalse = self.__code.newLabel()
-        temp    = self.__code.newTemp()
+        temp    = self.__newTemp()
         ##########################################################################
 
         ifTrue = self.__Expression()
 
         ################################ CODE GEN ################################
         compare = self.__code.newLabel()
-        self.__code.generate('cd_ASSIGN',self.SymbolTable.SymbolTable[self.SymbolTable.lookup('0')].m_lexeme,None,temp)
+        self.__code.generate('cd_ASSIGN',self.SymbolTable.SymbolTable[self.SymbolTable.lookup('0')].m_lexeme,None,self.SymbolTable.SymbolTable[temp].m_lexeme)
         self.__code.generate('cd_GOTO',None,None,compare)
         self.__code.generate('cd_LABEL',None,None,ifTrue)
-        self.__code.generate('cd_ASSIGN',self.SymbolTable.SymbolTable[self.SymbolTable.lookup('1')].m_lexeme,None,temp)
+        self.__code.generate('cd_ASSIGN',self.SymbolTable.SymbolTable[self.SymbolTable.lookup('1')].m_lexeme,None,self.SymbolTable.SymbolTable[temp].m_lexeme)
         self.__code.generate('cd_LABEL',None,None,compare)
         self.__code.generate('cd_EQ',temp,self.SymbolTable.SymbolTable[self.SymbolTable.lookup('0')].m_lexeme,ifFalse)
         ##########################################################################
@@ -488,13 +488,13 @@ class compParser:
         self.__match('tc_ELSE')
 
         ################################ CODE GEN ################################
-        self.__code.generate('tc_LABEL',None,None,ifFalse)
+        self.__code.generate('cd_LABEL',None,None,ifFalse)
         ##########################################################################
 
         self.__Statement()
 
         ################################ CODE GEN ################################
-        self.__code.generate('tc_LABEL',None,None,end)
+        self.__code.generate('cd_LABEL',None,None,end)
         ##########################################################################
 
     @trackDepth
@@ -623,7 +623,7 @@ class compParser:
 
             ################################ CODE GEN ################################
             temp = self.__newTemp()
-            self.__code.generate(op,prevEntryPointer,entry,temp)
+            self.__code.generate(op,prevEntryPointer,entry,self.SymbolTable.SymbolTable[temp].m_lexeme)
             ##########################################################################
 
             return temp
