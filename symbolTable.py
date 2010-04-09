@@ -2,8 +2,6 @@
 # Reykjavik University, Spring 2010
 # Haukur Jonasson, Skuli Arnlaugsson
 
-# This is the lexical analyser file as requested in part 4 of the assignment.
-# -*- coding: utf-8 -*-
 SYMMAX = 500
 
 class SymbolTableEntry:

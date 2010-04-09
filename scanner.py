@@ -1,15 +1,12 @@
-# Compilers - Project 1
+# Compilers - Project 3
 # Reykjavik University, Spring 2010
 # Haukur Jonasson, Skuli Arnlaugsson
 
-# This is the lexical analyser file as requested in part 2 of the assignment.
-# -*- coding: utf-8 -*-
 import ply.lex as lex
 import flex
 from token import Token
 
 maxLenghtOfIdentifier = 32
-
 
 class Scanner:
     """ The scanner class has a lexer and can deliver tokens on request."""

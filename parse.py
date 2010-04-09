@@ -2,18 +2,24 @@
 # Reykjavik University, Spring 2010
 # Haukur Jonasson, Skuli Arnlaugsson
 
-# -*- coding: utf-8 -*-
 import sys
-from scanner import Scanner
-from token import *
-from symbolTable import *
-import token
-from synchronizingSets import syncsets
 import code
+from scanner            import Scanner
+from synchronizingSets  import syncsets
+from symbolTable        import *
+from token              import *
 
-import symbolTable
+################################ Error recovery ################################
 depth = 0
 def trackDepth(func):
+    """
+    trackDepth increments a depth counter as soon as a parsing function is
+    called, and decrements that counter when the function has ended.
+
+    This is vital to our depth-based error recovery.
+
+    To see how this can be utilized, run the main program with the trace option on.
+    """
     def wrapper(classInstance,input=None):
         global depth
         if classInstance.printTree: print depth,'\t','    '*depth,'Opening:', func.__name__
@@ -23,6 +29,7 @@ def trackDepth(func):
         if classInstance.printTree: print depth,'\t','    '*depth,'Closing:',  func.__name__
         return value
     return wrapper
+################################################################################
 
 class Error:
     """ An instance of the Error class is a parser error encountered during parsing.
@@ -39,44 +46,43 @@ class Error:
         return "\t"+" "*(self.columnno-2) + "^ " + self.message
 
 class compParser:
-    # TODO: Add code generation to the following parsing functions:
-    #   Expression, SimpleExpression, Term, Termrest, Factor, FactorRest
-    # TODO: create functions: opToCode, getSymbolTable, getCode
     global depth
+
     def __init__(self,input):
-        self.__scanner = Scanner(input)
-        self.__code = code.Code()
-        self.__currentToken = None
-        self.__foundError = False
-        self.__errorInFunction = ''
-        self.__errorDepth = None
-        self.printTree = False
-        self.errors = []
-        self.__tempList = []
+        self.__scanner          = Scanner(input)
+        self.__code             = code.Code()
+        self.__currentToken     = None
+        self.__foundError       = False
+        self.__errorInFunction  = ''
+        self.__errorDepth       = None
+        self.__tempList         = []
 
-        self.SymbolTable = symbolTable.SymbolTable()
-        self.__initializeSymbolTable()
+        self.printTree          = False
+        self.errors             = []
 
-    def __initializeSymbolTable(self):
+        self.SymbolTable = SymbolTable()
         self.SymbolTable.insert('0','tc_CONST')
         self.SymbolTable.insert('1','tc_CONST')
 
     def __newTemp(self):
-        # Create a new temp variable, insert into SymbolTable and return
+        # Create a new temp variable, insert into SymbolTable and return temp name
         varName = self.__code.newTemp()
         stPointer = self.SymbolTable.insert(varName,'tc_VAR')
         self.__code.generate('cd_VAR',None,None,self.SymbolTable.SymbolTable[stPointer].m_lexeme)
         return stPointer
 
     def __newLabel(self):
+        # Create a new label name and return label name
         labelName = self.__code.newLabel()
         stPointer = self.SymbolTable.insert(labelName,'tc_LABEL')
         self.__code.generate('cd_LABEL',None,None,self.SymbolTable.SymbolTable[stPointer].m_lexeme)
 
-    def printCode(self):
-        #self.__code.__repr__()
-        self.__code.printTac()
+    def printTacToFile(self,fileName):
+        self.__code.printTacToFile(fileName)
 
+    def printCode(self):
+        self.__code.__repr__()
+        
     def parse(self,bool=False):
         if bool: self.printTree = True
         self.__getToken()
@@ -85,26 +91,20 @@ class compParser:
     def __getTokenCode(self):
         return self.__currentToken.TokenCode
 
-
     def __getToken(self):
         self.__currentToken = self.__scanner.nextToken()
-        if self.__currentToken == None: return False
-
+        if self.__currentToken == 'tc_EOF': return False
         if self.__getTokenCode() == 'tc_ID':
             entry = self.SymbolTable.lookup(self.__currentToken.DataValue[0].upper())
-
             if entry == -1 :  # -1 means not found in table
                 # Entry does not exist -> add it!
                 num = self.SymbolTable.insert(self.__currentToken.DataValue[0].upper(),self.__getTokenCode())
-
                 # Associate the token with the entry
                 self.__currentToken.setSymTabEntry(num)
             else:
                 # Token exists:
                 # Associate the token with the entry
                 self.__currentToken.setSymTabEntry(entry)
-
-
         elif self.__getTokenCode() == 'tc_NUMBER':
             # Same as for entry ..
             entry = self.SymbolTable.lookup(self.__currentToken.DataValue[0].upper())
@@ -113,17 +113,14 @@ class compParser:
                 self.__currentToken.setSymTabEntry(num)
             else:
                 self.__currentToken.setSymTabEntry(entry)
-
         return True
 
     def __callersname(self):
+        # Returns the name of the calling function
         return sys._getframe(2).f_code.co_name
-
-
 
     def __addError(self,token,message):
         self.errors.append(Error(token.lineno,token.columnno,message))
-
 
     def __recover(self):
         global depth
@@ -131,7 +128,6 @@ class compParser:
         if len(syncsets[self.__errorInFunction]) == 0: return
         while True:
             if not self.__getTokenCode() in syncsets[self.__errorInFunction]:
-
                 if self.printTree: print '\t','    '*depth, '-->Discarded %s'%self.__currentToken.DataValue[0]
                 result = self.__getToken()
                 if not result:
@@ -143,12 +139,9 @@ class compParser:
                 self.__errorInFunction = ''
                 self.__errorDepth = None
                 if self.printTree: print '\t','    '*depth,'->Recovered!'
-                #self.__getToken()
                 break
 
-
     def __match(self,expectedIn):
-
         # To track error depth - we do not want to recover from sibling or
         # parent's functions.
         global depth
@@ -183,14 +176,9 @@ class compParser:
                 self.__getToken()
                 return
             callFunc = self.__callersname()
-            if self.__getTokenCode() == 'tc_ID':
-                recTC = 'an identifier'
-            elif self.__getTokenCode() == 'tc_NUMBER':
-                recTC = 'a number'
-            else:
-                recTC = '"'+self.__currentToken.DataValue[0]+'"'
-            message = 'Expected %s (%s)'%(token.tc2Name[expectedIn],callFunc)
+            message = 'Expected %s (%s)'%(tc2Name[expectedIn],callFunc)
             if self.printTree: print '\t','    '*depth,'Error: Could not match at depth %d'%depth
+
             self.__addError(self.__currentToken,message)
             self.__foundError = True
             self.__errorInFunction = callFunc
@@ -199,12 +187,12 @@ class compParser:
             if self.__getTokenCode() in syncsets[callFunc]: return
             if self.printTree: print '\t','    '*depth,'Discarding unexpected token "%s"'%self.__currentToken.DataValue[0]
             self.__getToken()
-
         else: self.__getToken()
 
     def __missingSingle(self,expTC):
+        # A smaller error. Marks error and continues.
         try:
-            name = token.tc2Name[expTC]
+            name = tc2Name[expTC]
         except:
             name = expTC
         message = 'Expected %s'%name
@@ -212,37 +200,39 @@ class compParser:
 
     @trackDepth
     def __Program(self,input=None):
-        # ProgramDefinition returns the program name (string)
         programName = self.__ProgramDefinition()
-
-        # Reset tempList in between - since we do not want to
-        # add the ProgramDefinition identifier-list to our TAC anyway.
-        self.__tempList = []
-        
+        self.__tempList = [] # Flush anything from ProgramDefinition (input,output).
         if self.__getTokenCode() == 'tc_SEMICOL':
             self.__match('tc_SEMICOL')
         else:
             self.__missingSingle('tc_SEMICOL')
-        
         self.__Declarations()
-        # Now generate TAC for the program variables
-        self.__code.generateVariables(self.__tempList)
-        # And flush list.
-        self.__tempList = []
 
-        if self.__foundError:
+        ################################ CODE GEN ################################
+        self.__code.generateVariables(self.__tempList)
+        self.__tempList = []
+        ##########################################################################
+
+        if self.__foundError: # Force recover here (crucial point)
             self.__recover()
             self.__getToken()
 
+        ################################ CODE GEN ################################
         self.__code.generate('cd_GOTO',None,None,programName)
+        ##########################################################################
 
         self.__SubprogramDeclarations()
 
-
+        ################################ CODE GEN ################################
         self.__code.generate('cd_LABEL',None,None,programName)
+        ##########################################################################
+
         self.__CompoundStatement()
         self.__match('tc_DOT')
-        self.__code.generate('cd_RETURN',None,None,None)        
+
+        ################################ CODE GEN ################################
+        self.__code.generate('cd_RETURN',None,None,None)
+        ##########################################################################
 
     @trackDepth
     def __ProgramDefinition(self,input=None):
@@ -287,7 +277,6 @@ class compParser:
         if self.__currentToken.TokenCode == 'tc_ARRAY':self.__TypeArray()
         self.__StandardType()
 
-
     @trackDepth
     def __TypeArray(self,input=None):
         self.__match('tc_ARRAY')
@@ -297,7 +286,6 @@ class compParser:
         self.__match('tc_NUMBER')
         self.__match('tc_RBRACKET')
         self.__match('tc_OF')
-
 
     @trackDepth
     def __StandardType(self,input=None):
@@ -321,10 +309,12 @@ class compParser:
     def __SubprogramDeclaration(self,input=None):
         self.__SubprogramHead()
         self.__match('tc_SEMICOL')
-
         self.__Declarations()
+
+        ################################ CODE GEN ################################
         self.__code.generateVariables(self.__tempList)
         self.__tempList = []
+        ##########################################################################
 
         self.__CompoundStatement()
 
@@ -340,8 +330,10 @@ class compParser:
     def __Function(self,input=None):
         self.__match('tc_FUNCTION')
         pointer = self.__currentToken.getSymTabEntry()
-        self.__code.generate('cd_LABEL',None,None,self.SymbolTable.SymbolTable[pointer].m_lexeme)        
 
+        ################################ CODE GEN ################################
+        self.__code.generate('cd_LABEL',None,None,self.SymbolTable.SymbolTable[pointer].m_lexeme)
+        ##########################################################################
 
         self.__match('tc_ID')
         self.__Arguments()
@@ -352,7 +344,10 @@ class compParser:
     def __Procedure(self,input=None):
         self.__match('tc_PROCEDURE')
         pointer = self.__currentToken.getSymTabEntry()
-        self.__code.generate('cd_LABEL',None,None,self.SymbolTable.SymbolTable[pointer].m_lexeme)        
+
+        ################################ CODE GEN ################################
+        self.__code.generate('cd_LABEL',None,None,self.SymbolTable.SymbolTable[pointer].m_lexeme)
+        ##########################################################################
 
         self.__match('tc_ID')
         self.__Arguments()
@@ -361,10 +356,12 @@ class compParser:
     def __Arguments(self,input=None):
         if self.__currentToken.TokenCode == 'tc_LPAREN':
             self.__match('tc_LPAREN')
-
             self.__ParameterList()
+
+            ################################ CODE GEN ################################
             self.__code.generateFParams(self.__tempList)
             self.__tempList = []
+            ##########################################################################
 
             self.__match('tc_RPAREN')
 
@@ -406,10 +403,8 @@ class compParser:
     def __Statement(self,input=None):
         if self.__currentToken.TokenCode == 'tc_BEGIN':
             self.__CompoundStatement()
-
         elif self.__currentToken.TokenCode == 'tc_IF':
             self.__IfStatement()
-
         elif self.__currentToken.TokenCode == 'tc_WHILE':
             self.__WhileStatement()
         elif self.__currentToken.TokenCode == 'tc_ID':
@@ -419,21 +414,21 @@ class compParser:
         else:
             self.__match('tc_STATEMENT')
 
-
-
     @trackDepth
     def __ArrayReference(self,input=None):
         self.__match('tc_LBRACKET')
         self.__Expression()
         self.__match('tc_RBRACKET')
 
-
     @trackDepth
     def __IdOrProcedureStatement(self, prevEntryPointer):
         if self.__currentToken.TokenCode == 'tc_ASSIGNOP':
             self.__match('tc_ASSIGNOP')
             outcomePointer = self.__Expression()
+
+            ################################ CODE GEN ################################
             self.__code.generate('cd_ASSIGN',self.SymbolTable.SymbolTable[outcomePointer].m_lexeme,None,self.SymbolTable.SymbolTable[prevEntryPointer].m_lexeme)
+            ##########################################################################
 
         elif self.__currentToken.TokenCode == 'tc_LBRACKET':
             self.__ArrayReference()
@@ -445,33 +440,39 @@ class compParser:
             self.__match('tc_LPAREN')
             self.__tempList = []            
             self.__ExpressionList()
+
+            ################################ CODE GEN ################################
             self.__code.generateAParams(self.__tempList)
+            ##########################################################################
             self.__tempList = []
+
+            ################################ CODE GEN ################################
             self.__code.generate('cd_CALL',self.SymbolTable.SymbolTable[prevEntryPointer].m_lexeme,None,None)
+            ##########################################################################
+
             self.__match('tc_RPAREN')
 
     @trackDepth
     def __IfStatement(self,input=None):
         self.__match('tc_IF')
 
+        ################################ CODE GEN ################################
         end     = self.__code.newLabel()
         ifFalse = self.__code.newLabel()
         temp    = self.__code.newTemp()
-
+        ##########################################################################
 
         ifTrue = self.__Expression()
 
+        ################################ CODE GEN ################################
         compare = self.__code.newLabel()
-
         self.__code.generate('cd_ASSIGN',self.SymbolTable.SymbolTable[self.SymbolTable.lookup('0')].m_lexeme,None,temp)
         self.__code.generate('cd_GOTO',None,None,compare)
-
         self.__code.generate('cd_LABEL',None,None,ifTrue)
         self.__code.generate('cd_ASSIGN',self.SymbolTable.SymbolTable[self.SymbolTable.lookup('1')].m_lexeme,None,temp)
-
         self.__code.generate('cd_LABEL',None,None,compare)
         self.__code.generate('cd_EQ',temp,self.SymbolTable.SymbolTable[self.SymbolTable.lookup('0')].m_lexeme,ifFalse)
-
+        ##########################################################################
 
         if self.__currentToken.TokenCode == 'tc_THEN':
             self.__match('tc_THEN')
@@ -480,46 +481,55 @@ class compParser:
 
         self.__Statement()
 
+        ################################ CODE GEN ################################
         self.__code.generate('cd_GOTO',None,None,end)
+        ##########################################################################
 
         self.__match('tc_ELSE')
 
+        ################################ CODE GEN ################################
         self.__code.generate('tc_LABEL',None,None,ifFalse)
+        ##########################################################################
+
         self.__Statement()
+
+        ################################ CODE GEN ################################
         self.__code.generate('tc_LABEL',None,None,end)
+        ##########################################################################
 
     @trackDepth
     def __WhileStatement(self,input=None):
         self.__match('tc_WHILE')
 
+        ################################ CODE GEN ################################
         begin   = self.__code.newLabel()
         end     = self.__code.newLabel()
-
         self.__code.generate('cd_LABEL',None,None,begin)
+        ##########################################################################
 
         ifTrue = self.__Expression()
 
+        ################################ CODE GEN ################################
         self.__code.generate('cd_GOTO',None,None,end)
         self.__code.generate('cd_LABEL',None,None,ifTrue)
+        ##########################################################################
 
         if self.__currentToken.TokenCode == 'tc_DO':
             self.__match('tc_DO')
         else:
             self.__missingSingle('tc_DO')
-
-
         self.__Statement()
 
+        ################################ CODE GEN ################################
         self.__code.generate('cd_GOTO',None,None,begin)
         self.__code.generate('cd_LABEL',None,None,end)
-
+        ##########################################################################
 
     @trackDepth
     def __ExpressionList(self,input=None):
         expr = self.__Expression()
         self.__tempList.append(self.SymbolTable.SymbolTable[expr].m_lexeme)
         self.__ExpressionListRest()
-
 
     @trackDepth
     def __ExpressionListRest(self,input=None):
@@ -542,8 +552,12 @@ class compParser:
             self.__match('tc_RELOP')
             label = self.__code.newLabel()
             entry = self.__SimpleExpression()
+
+            ################################ CODE GEN ################################
             self.__code.generate(op,self.SymbolTable.SymbolTable[prevEntryPointer].m_lexeme,self.SymbolTable.SymbolTable[entry].m_lexeme,label)
-            return label            
+            ##########################################################################
+
+            return label
         else:
             return prevEntryPointer
 
@@ -555,19 +569,17 @@ class compParser:
             if op == 'op_MINUS':
                 uminus = True
             self.__match('tc_ADDOP')
-
         entry = self.__Term()
-
-            
         entry = self.__SimpleExpressionAddop(entry)
         if uminus:
+
+            ################################ CODE GEN ################################
             temp = self.__newTemp()
             self.__code.generate('cd_UMINUS',self.SymbolTable.SymbolTable[entry].m_lexeme,None,self.SymbolTable.SymbolTable[temp].m_lexeme)
             entry = temp
+            ##########################################################################
 
         return entry
-        
-
 
     @trackDepth
     def __SimpleExpressionAddop(self,prevEntryPointer):
@@ -576,8 +588,12 @@ class compParser:
             self.__match('tc_ADDOP')
             entry = self.__Term()
             entry = self.__SimpleExpressionAddop(entry)
+
+            ################################ CODE GEN ################################
             pointer = self.__newTemp()
             self.__code.generate(op,self.SymbolTable.SymbolTable[prevEntryPointer].m_lexeme,self.SymbolTable.SymbolTable[entry].m_lexeme,self.SymbolTable.SymbolTable[pointer].m_lexeme)
+            ##########################################################################
+
             return pointer
         else:
             return prevEntryPointer
@@ -594,8 +610,12 @@ class compParser:
             op = self.__currentToken.DataValue[1]
             self.__match('tc_MULOP')
             entry = self.__Term()
+
+            ################################ CODE GEN ################################
             temp = self.__newTemp()
             self.__code.generate(op,self.SymbolTable.SymbolTable[prevEntryPointer].m_lexeme,self.SymbolTable.SymbolTable[entry].m_lexeme,self.SymbolTable.SymbolTable[temp].m_lexeme)
+            ##########################################################################
+
             return temp
         else:
             return prevEntryPointer
@@ -627,14 +647,15 @@ class compParser:
             self.__match('tc_LPAREN')
             self.__tempList = []            
             self.__ExpressionList()
+
+            ################################ CODE GEN ################################
+            # Generate code for aparms and finally a call to the function
             self.__code.generateAParams(self.__tempList)
             self.__tempList = []
             self.__code.generate('cd_CALL',self.SymbolTable.SymbolTable[prevEntry].m_lexeme,None,None)
+            ##########################################################################
+            
             self.__match('tc_RPAREN')
-
         elif self.__currentToken.TokenCode == 'tc_LBRACKET':
             self.__ArrayReference()
-
         return prevEntry
-
-
