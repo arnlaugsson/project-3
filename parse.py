@@ -176,7 +176,7 @@ class compParser:
                 self.__getToken()
                 return
             callFunc = self.__callersname()
-            message = 'Expected %s (%s)'%(tc2Name[expectedIn],callFunc)
+            message = 'Expected %s'%tc2Name[expectedIn]
             if self.printTree: print '\t','    '*depth,'Error: Could not match at depth %d'%depth
 
             self.__addError(self.__currentToken,message)
